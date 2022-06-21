@@ -1,0 +1,74 @@
+{
+  "renderer": "global",
+  "name": "edge",
+  "maxVolume": 1000,
+  "nodes": [
+    {
+      "renderer": "region",
+      "name": "INTERNET",
+      "class": "normal"
+    },
+    {
+      "renderer": "region",
+      "name": "edge#1",
+      "class": "normal",
+      "updated": 1466838546805
+    },
+    {
+      "renderer": "region",
+      "name": "edge#2",
+      "class": "normal",
+      "updated": 1466838546805
+    },
+    {
+      "renderer": "region",
+      "name": "edge#3",
+      "class": "normal",
+      "updated": 1466838546805
+    },
+    {
+      "renderer": "region",
+      "name": "edge#4",
+      "class": "normal",
+      "updated": 1466838546805
+    }
+  ],
+  "connections": [
+     {
+      "source": "INTERNET",
+      "target": "edge#1",
+      "metrics": {
+      },
+      "notices": [
+      ],
+      "class": "normal"
+    },
+    {
+      "source": "INTERNET",
+      "target": "edge#2",
+      "metrics": {
+      },
+      "notices": [
+      ],
+      "class": "normal"
+    },
+    {
+      "source": "INTERNET",
+      "target": "edge#3",
+      "metrics": {
+      },
+      "notices": [
+      ],
+      "class": "normal"
+    },
+    {
+      "source": "INTERNET",
+      "target": "edge#4",
+      "metrics": {
+      },
+      "notices": [
+      ],
+      "class": "normal"
+    }
+  ]
+}

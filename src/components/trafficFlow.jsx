@@ -33,9 +33,48 @@ const Box = styled.div`
   width: 200px;
   height: 500px;
   background: white;
+`;
 
-  
-`
+const TARGETS = ["edge#1", "edge#2", "edge#3", "edge#4"];
+const VIZ_DEF_CONFIG = {
+  renderer: "global",
+  name: "edge",
+  maxVolume: 1000,
+  nodes: [
+    {
+      renderer: "region",
+      name: "INTERNET",
+      class: "normal"
+    },
+    {
+      renderer: "region",
+      name: "edge#1",
+      class: "normal",
+      updated: 1466838546805
+    },
+    {
+      renderer: "region",
+      name: "edge#2",
+      class: "normal",
+      updated: 1466838546805
+    },
+    {
+      renderer: "region",
+      name: "edge#3",
+      class: "normal",
+      updated: 1466838546805
+    },
+    {
+      renderer: "region",
+      name: "edge#4",
+      class: "normal",
+      updated: 1466838546805
+    }
+  ]     
+}
+const getRandom = maxValue => {
+  return Math.floor(Math.random() * maxValue)
+}
 
 const listener = new keypress.Listener();
 
@@ -48,6 +87,17 @@ function animate (time) {
 requestAnimationFrame(animate);
 
 const panelWidth = 400;
+
+const arraySet = (array, index, element) =>{
+  const newArray = [...array];
+  newArray[index] = element;
+  return newArray;
+}
+const objectSet = (obj, key, value) => {
+  const newObj = [...obj];
+  newObj[key] = value;
+  return newObj;
+}
 
 class TrafficFlow extends React.Component {
   constructor (props) {
@@ -92,7 +142,8 @@ class TrafficFlow extends React.Component {
       },
       currentNormal: 0,
       currentDanger: 0,
-      currentScale: 1000
+      currentScale: 1000,
+      maxVolume: 1000
     };
 
     // Browser history support
@@ -166,23 +217,31 @@ class TrafficFlow extends React.Component {
   }
 
   beginSampleData (data) {
-    const { normal=0, danger=0, maxVolume=1000 } = data;
-    this.traffic = { nodes: [], connections: [] };
-    request.get('sample_data_none.json')
+    // this.traffic = { nodes: [], connections: [] };
+    request.get('sample_data_simple.json')
+    // request.get('sample_data_none.json')
     // request.get('sample_data_region_only.json')
       .set('Accept', 'application/json')
       .end((err, res) => {
         if (res && res.status === 200) {
-          this.traffic.clientUpdateTime = Date.now();
-          // res.body.connections[0].metrics = {
-          //   normal:parseFloat(normal),
-          //   danger:parseFloat(danger)
-          // }
-          console.log(res.body.connections)
+          // this.traffic.clientUpdateTime = Date.now();
+          res.body.connections[0].metrics = {
+            normal:parseFloat(getRandom(1000)),
+            danger:parseFloat(getRandom(10))
+          }
+          console.log(res.body)
+          // this.setState({
+          //   trafficData: res.body
+          // })
           this.updateData(res.body);
         }
       });
   }
+
+  updateRandomData = () => {
+    const newEdegData = this.genConnectionData();
+    this.refreshConnectionData(newEdegData)
+  };
 
   componentDidMount () {
     this.checkInitialRoute();
@@ -190,6 +249,25 @@ class TrafficFlow extends React.Component {
 
     // Listen for changes to the stores
     filterStore.addChangeListener(this.filtersChanged);
+    setInterval(() => {
+      this.updateRandomData();
+    },3000)
+  }
+
+  genConnectionData = () => {
+    const randomEdge = TARGETS[getRandom(4)];
+    return {
+      source: "INTERNET",
+      target: randomEdge,
+      updated: Date.now(),
+      notices: [],
+      metrics: {
+        normal: parseFloat(getRandom(5000)),
+        warning: parseFloat(getRandom(100)),
+        danger: parseFloat(getRandom(50))
+      },
+      class: 'normal'
+    }
   }
 
   componentWillUnmount () {
@@ -197,6 +275,7 @@ class TrafficFlow extends React.Component {
   }
 
   shouldComponentUpdate (nextProps, nextState) {
+    console.log('nextState:', nextState)
     if (!this.state.currentView
         || this.state.currentView[0] !== nextState.currentView[0]
         || this.state.currentView[1] !== nextState.currentView[1]
@@ -218,12 +297,14 @@ class TrafficFlow extends React.Component {
         window.history.pushState(state, state.title, state.url);
       }
     }
+    console.log('#### re-render')
     return true;
   }
 
   updateData (newTraffic) {
     const regionUpdateStatus = _.map(_.filter(newTraffic.nodes, n => n.name !== 'INTERNET'), node => ({ region: node.name, updated: node.updated }));
     const lastUpdatedTime = _.max(_.map(regionUpdateStatus, 'updated'));
+    console.log('newTraffic in updateData:', newTraffic)
     this.setState({
       regionUpdateStatus: regionUpdateStatus,
       timeOffset: newTraffic.clientUpdateTime - newTraffic.serverUpdateTime,
@@ -340,43 +421,28 @@ class TrafficFlow extends React.Component {
     this.setState({ redirectedFrom: undefined });
   }
 
+  refreshConnectionData = (connectionData) => {
+    const oldConnectionData = this.state.trafficData.connections;
+    const index = oldConnectionData.findIndex(data => data.target === connectionData.target);
+    const newConnectionData = arraySet(oldConnectionData, index ,connectionData);
+    console.log('new connection data =', connectionData, newConnectionData);
+    const newTrafficData = {
+      // ...this.state.trafficData,
+      ...VIZ_DEF_CONFIG,
+      maxVolume: this.state.maxVolume,
+      clientUpdateTime: Date.now(),
+      connections: newConnectionData
+    }
+    this.updateData(newTrafficData);
+  };
+
   onChangeInput = (event) => {
+    const type = event.target.id;
+    console.log(type, event.target.value);
     this.setState({
       ...this.state,
-      [event.target.id]: event.target.value
-    });
-    const valuesInState = {
-      normal: this.state.currentNormal,
-      danger: this.state.currentDanger,
-      scale: this.state.currentScale
-    }
-    const idToKey = {
-      currentNormal: 'normal',
-      currentDanger: 'danger',
-      currentScale: 'scale'
-    }
-    this.beginSampleData({
-      ...valuesInState,
-      [idToKey[event.target.id]]: event.target.value
-    });
-  }
-
-  onChangeNormal = (event) => {
-    // eslint-disable-next-line no-alert
-    this.setState({currentNormal: event.target.value});
-    this.beginSampleData({
-      normal: event.target.value,
-      danger: this.state.currentDanger
-    });
-  }
-
-  onChangeDanger = (event) => {
-    // eslint-disable-next-line no-alert
-    this.setState({currentDanger: event.target.value});
-    this.beginSampleData({
-      normal: this.state.currentNormal,
-      danger: event.target.value
-    });
+      [type]: event.target.value
+    }) 
   }
 
   render () {
@@ -406,13 +472,6 @@ class TrafficFlow extends React.Component {
           </Alert>
           : undefined }
         <div className="subheader">
-          <label>normal</label>
-          <input id="currentNormal" onChange={this.onChangeInput} value={this.state.currentNormal}></input>
-          <label>danger</label>
-          <input id="currentDanger" onChange={this.onChangeInput} value={this.state.currentDanger}></input>
-          <label>maxVolume(scale)</label>
-          <input id="currentScale" onChange={this.onChangeInput} value={this.state.currentScale}></input>
-          {showBreadcrumbs && <Breadcrumbs rootTitle={breadcrumbsRoot} navigationStack={this.state.currentView || []} navigationCallback={this.navigationCallback} />}
           {showBreadcrumbs && <Breadcrumbs rootTitle={breadcrumbsRoot} navigationStack={this.state.currentView || []} navigationCallback={this.navigationCallback} />}
           {showBreadcrumbs && <UpdateStatus status={this.state.regionUpdateStatus} baseOffset={this.state.timeOffset} warnThreshold={180000} />}
           <div style={{ float: 'right', paddingTop: '4px' }}>
@@ -463,7 +522,11 @@ class TrafficFlow extends React.Component {
           }
           <LoadingCover show={showLoadingCover} />
         </div>
-        <Box>edge#1</Box>
+        <Box>
+          <label>maxVolume</label>
+          <input id="maxVolume" value={this.state.maxVolume} onChange={this.onChangeInput}></input>
+          <button onClick={this.updateRandomData}>force refresh</button>
+        </Box>
       </div>
     );
   }

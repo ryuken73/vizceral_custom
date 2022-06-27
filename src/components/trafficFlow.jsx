@@ -31,9 +31,14 @@ const Box = styled.div`
   bottom: 10px;
   left: 10px;
   width: 200px;
-  height: 500px;
-  background: white;
+  padding: 10px;
+  /* height: 500px; */
+  background: black;
+  color: grey;
+  border: 1px dashed white;
 `;
+
+const EdgeDataList = styled.div``;
 
 const TARGETS = ["edge#1", "edge#2", "edge#3", "edge#4"];
 const VIZ_DEF_CONFIG = {
@@ -94,7 +99,7 @@ const arraySet = (array, index, element) =>{
   return newArray;
 }
 const objectSet = (obj, key, value) => {
-  const newObj = [...obj];
+  const newObj = {...obj};
   newObj[key] = value;
   return newObj;
 }
@@ -143,7 +148,10 @@ class TrafficFlow extends React.Component {
       currentNormal: 0,
       currentDanger: 0,
       currentScale: 1000,
-      maxVolume: 1000
+      maxVolume: 1000,
+      autoChecked: true,
+      autoTimer: null,
+      currentEdge: 'edge#1'
     };
 
     // Browser history support
@@ -238,9 +246,9 @@ class TrafficFlow extends React.Component {
       });
   }
 
-  updateRandomData = () => {
-    const newEdegData = this.genConnectionData();
-    this.refreshConnectionData(newEdegData)
+  updateRandomData = (newEdgeData) => {
+    // const newEdegData = this.genConnectionData();
+    this.refreshConnectionData(newEdgeData)
   };
 
   componentDidMount () {
@@ -249,26 +257,35 @@ class TrafficFlow extends React.Component {
 
     // Listen for changes to the stores
     filterStore.addChangeListener(this.filtersChanged);
-    setInterval(() => {
-      this.updateRandomData();
-    },3000)
+    let timer = null;
+    if (this.state.autoChecked) {
+      timer = setInterval(() => {
+        const newEdgeData = this.genConnectionData();
+        this.updateRandomData(newEdgeData);
+      }, 3000);
+    }; 
+    this.setState({
+      autoTimer: timer
+    })
   }
 
-  genConnectionData = () => {
-    const randomEdge = TARGETS[getRandom(4)];
+  genConnectionData = (node, metrics) => {
+    // const randomEdge = TARGETS[getRandom(4)];
+    const edge = node || TARGETS[getRandom(4)];
+    const newMetrics = metrics || {
+      normal: parseFloat(getRandom(5000)),
+      warning: parseFloat(getRandom(100)),
+      danger: parseFloat(getRandom(50))
+    }
     return {
       source: "INTERNET",
-      target: randomEdge,
+      target: edge,
       updated: Date.now(),
       notices: [],
-      metrics: {
-        normal: parseFloat(getRandom(5000)),
-        warning: parseFloat(getRandom(100)),
-        danger: parseFloat(getRandom(50))
-      },
+      metrics: newMetrics,
       class: 'normal'
     }
-  }
+  };
 
   componentWillUnmount () {
     filterStore.removeChangeListener(this.filtersChanged);
@@ -445,14 +462,52 @@ class TrafficFlow extends React.Component {
     }) 
   }
 
+  onChangeCheckBox = (event) => {
+    const autoChecked = event.target.checked;
+    let timer = null;
+    if(autoChecked){
+      timer = setInterval(() => {
+        const newEdgeData = this.genConnectionData();
+        this.updateRandomData(newEdgeData);
+      },3000)
+    } else {
+      clearInterval(this.state.autoTimer);
+    }
+    this.setState({
+      autoChecked,
+      autoTimer: timer
+    })
+  }
+
+  onChangeSelect = (event) => {
+    console.log(event.target.value);
+    this.setState({
+      currentEdge: event.target.value
+    })
+  }
+
+  onChangeEdgeData = (event) => {
+    const {currentEdge, trafficData} = this.state;
+    const metricType = event.target.id;
+    const metricValue = parseFloat(event.target.value);
+    console.log(metricType, metricValue, currentEdge, trafficData.connections);
+    const selectedEdgeConnection = trafficData.connections.find(connection => connection.target === currentEdge);
+    const newMetrics = objectSet(selectedEdgeConnection.metrics, metricType, metricValue);
+    console.log(newMetrics)
+    const newConnectionData = this.genConnectionData(currentEdge, newMetrics);
+    this.refreshConnectionData(newConnectionData);
+  }
+
   render () {
-    const { trafficData } = this.state;
+    const { trafficData, currentEdge } = this.state;
     const focusedNode = this.state.currentGraph && this.state.currentGraph.focusedNode;
     const nodeToShowDetails = focusedNode || (this.state.highlightedObject && this.state.highlightedObject.type === 'node' ? this.state.highlightedObject : undefined);
     const connectionToShowDetails = this.state.highlightedObject && this.state.highlightedObject.type === 'connection' ? this.state.highlightedObject : undefined;
     const showLoadingCover = !this.state.currentGraph;
     const showBreadcrumbs = trafficData && trafficData.nodes && trafficData.nodes.length > 0;
     const breadcrumbsRoot = _.get(trafficData, 'name', 'root');
+    const selectedEdgeConnection = trafficData.connections.find(connection => connection.target === currentEdge);
+    const {normal, danger, warning} = selectedEdgeConnection ? selectedEdgeConnection.metrics: {};
 
     let matches;
     if (this.state.currentGraph) {
@@ -522,10 +577,29 @@ class TrafficFlow extends React.Component {
           }
           <LoadingCover show={showLoadingCover} />
         </div>
+
         <Box>
+          <input type='checkbox' checked={this.state.autoChecked} onChange={this.onChangeCheckBox}></input>
+          <label> auto update(random)</label>
+          <hr></hr>
           <label>maxVolume</label>
           <input id="maxVolume" value={this.state.maxVolume} onChange={this.onChangeInput}></input>
-          <button onClick={this.updateRandomData}>force refresh</button>
+          <button onClick={this.updateRandomData}>apply</button>
+          <hr></hr>
+          <label>choose edge</label>
+          <select value={this.state.currentEdge} onChange={this.onChangeSelect}>
+            {this.state.trafficData.connections.map(connection => (
+              <option value={connection.target}>{connection.target}</option>
+            ))}
+          </select>
+          <EdgeDataList>
+              <label>normal</label>
+              <input id="normal" value={normal} onChange={this.onChangeEdgeData}></input>
+              <label>warning</label>
+              <input id="warning" value={warning} onChange={this.onChangeEdgeData}></input>
+              <label>danger</label>
+              <input id="danger" value={danger} onChange={this.onChangeEdgeData}></input>
+          </EdgeDataList>
         </Box>
       </div>
     );

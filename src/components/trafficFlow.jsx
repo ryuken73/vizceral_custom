@@ -41,6 +41,7 @@ const Box = styled.div`
 const EdgeDataList = styled.div``;
 
 const TARGETS = ["edge#1", "edge#2", "edge#3", "edge#4"];
+const METRIC_TYPE = ['normal', 'warning', 'danger']
 const VIZ_DEF_CONFIG = {
   renderer: "global",
   name: "edge",
@@ -241,14 +242,14 @@ class TrafficFlow extends React.Component {
           // this.setState({
           //   trafficData: res.body
           // })
-          this.updateData(res.body);
+          this.updateTrafficData(res.body);
         }
       });
   }
 
   updateRandomData = (newEdgeData) => {
     // const newEdegData = this.genConnectionData();
-    this.refreshConnectionData(newEdgeData)
+    this.refreshEdgeConnection(newEdgeData)
   };
 
   componentDidMount () {
@@ -318,10 +319,10 @@ class TrafficFlow extends React.Component {
     return true;
   }
 
-  updateData (newTraffic) {
+  updateTrafficData (newTraffic) {
     const regionUpdateStatus = _.map(_.filter(newTraffic.nodes, n => n.name !== 'INTERNET'), node => ({ region: node.name, updated: node.updated }));
     const lastUpdatedTime = _.max(_.map(regionUpdateStatus, 'updated'));
-    console.log('newTraffic in updateData:', newTraffic)
+    console.log('newTraffic in updateTrafficData:', newTraffic)
     this.setState({
       regionUpdateStatus: regionUpdateStatus,
       timeOffset: newTraffic.clientUpdateTime - newTraffic.serverUpdateTime,
@@ -438,7 +439,7 @@ class TrafficFlow extends React.Component {
     this.setState({ redirectedFrom: undefined });
   }
 
-  refreshConnectionData = (connectionData) => {
+  refreshEdgeConnection = (connectionData) => {
     const oldConnectionData = this.state.trafficData.connections;
     const index = oldConnectionData.findIndex(data => data.target === connectionData.target);
     const newConnectionData = arraySet(oldConnectionData, index ,connectionData);
@@ -450,7 +451,7 @@ class TrafficFlow extends React.Component {
       clientUpdateTime: Date.now(),
       connections: newConnectionData
     }
-    this.updateData(newTrafficData);
+    this.updateTrafficData(newTrafficData);
   };
 
   onChangeInput = (event) => {
@@ -495,8 +496,26 @@ class TrafficFlow extends React.Component {
     const newMetrics = objectSet(selectedEdgeConnection.metrics, metricType, metricValue);
     console.log(newMetrics)
     const newConnectionData = this.genConnectionData(currentEdge, newMetrics);
-    this.refreshConnectionData(newConnectionData);
+    this.refreshEdgeConnection(newConnectionData);
   }
+
+  setZero = () => {
+    const connections = TARGETS.map(target => {
+      return this.genConnectionData(target, {
+        normal: 0,
+        warning: 0,
+        danger: 0
+      })
+    })
+    const newTrafficData = {
+      // ...this.state.trafficData,
+      ...VIZ_DEF_CONFIG,
+      maxVolume: this.state.maxVolume,
+      clientUpdateTime: Date.now(),
+      connections
+    }
+    this.updateTrafficData(newTrafficData);
+  };
 
   render () {
     const { trafficData, currentEdge } = this.state;
@@ -581,6 +600,7 @@ class TrafficFlow extends React.Component {
         <Box>
           <input type='checkbox' checked={this.state.autoChecked} onChange={this.onChangeCheckBox}></input>
           <label> auto update(random)</label>
+          <button onClick={this.setZero}>set all zero</button>
           <hr></hr>
           <label>maxVolume</label>
           <input id="maxVolume" value={this.state.maxVolume} onChange={this.onChangeInput}></input>

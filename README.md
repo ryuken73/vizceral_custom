@@ -1,29 +1,17 @@
-![](https://raw.githubusercontent.com/Netflix/vizceral/master/logo.png)
-
-# Vizceral Example
-This is a sample application using the [React wrapper](https://github.com/Netflix/vizceral-react) around the [vizceral](https://github.com/Netflix/vizceral) graph.
-For more details about using vizceral in your own projects with your own data, refer to the above repositories.
+# Vizceral Example with dynamic traffic data
+  This is a clone of [Vizceral Example](https://github.com/netflix/vizceral-example) with which you can vary traffic data and verify resulting vizualization.
 
 # Setup
 1. Get source, install deps, and run demo server.
 
    ```sh
-   git clone git@github.com:Netflix/vizceral-example.git
-   cd vizceral-example
+   git clone https://github.com/ryuken73/vizceral_custom.git
+   cd vizceral-custom
    npm install
    npm run dev
    ```
 
 2. Open `localhost:8080` in your browser.
 
-##### Using Docker
-If you don't have a node environment setup or would like to run this example on a platform, there is a Dockerfile for experimental usage.
-
-```
-$ docker build -t <name>/vizceral-example .
-```
-```
-$ docker run -p 41911:8080 -d <name>/vizceral-example
-```
-
-Then you should be able to navigate to http://localhost:41911
+# Screen Shot
+<img src="img/screen_shot1.jpg" />

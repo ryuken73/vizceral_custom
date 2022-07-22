@@ -70,9 +70,5 @@
   "repository": {
     "type": "git",
     "url": "git@github.com:Netflix/vizceral-example.git"
-  },
-  "pre-commit": [
-    "lint",
-    "test"
-  ]
+  }
 }

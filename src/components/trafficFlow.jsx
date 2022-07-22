@@ -11,6 +11,7 @@ import queryString from 'query-string';
 import request from 'superagent';
 
 import './trafficFlow.css';
+import styled from 'styled-components';
 import Breadcrumbs from './breadcrumbs';
 import DisplayOptions from './displayOptions';
 import PhysicsOptions from './physicsOptions';
@@ -24,7 +25,6 @@ import UpdateStatus from './updateStatus';
 
 import filterActions from './filterActions';
 import filterStore from './filterStore';
-import styled from 'styled-components';
 
 const Box = styled.div`
   position: absolute;
@@ -40,47 +40,45 @@ const Box = styled.div`
 
 const EdgeDataList = styled.div``;
 
-const TARGETS = ["edge#1", "edge#2", "edge#3", "edge#4"];
-const METRIC_TYPE = ['normal', 'warning', 'danger']
+const TARGETS = ['edge#1', 'edge#2', 'edge#3', 'edge#4'];
+const METRIC_TYPE = ['normal', 'warning', 'danger'];
 const VIZ_DEF_CONFIG = {
-  renderer: "global",
-  name: "edge",
+  renderer: 'global',
+  name: 'edge',
   maxVolume: 1000,
   nodes: [
     {
-      renderer: "region",
-      name: "INTERNET",
-      class: "normal"
+      renderer: 'region',
+      name: 'INTERNET',
+      class: 'normal'
     },
     {
-      renderer: "region",
-      name: "edge#1",
-      class: "normal",
+      renderer: 'region',
+      name: 'edge#1',
+      class: 'normal',
       updated: 1466838546805
     },
     {
-      renderer: "region",
-      name: "edge#2",
-      class: "normal",
+      renderer: 'region',
+      name: 'edge#2',
+      class: 'normal',
       updated: 1466838546805
     },
     {
-      renderer: "region",
-      name: "edge#3",
-      class: "normal",
+      renderer: 'region',
+      name: 'edge#3',
+      class: 'normal',
       updated: 1466838546805
     },
     {
-      renderer: "region",
-      name: "edge#4",
-      class: "normal",
+      renderer: 'region',
+      name: 'edge#4',
+      class: 'normal',
       updated: 1466838546805
     }
-  ]     
-}
-const getRandom = maxValue => {
-  return Math.floor(Math.random() * maxValue)
-}
+  ]
+};
+const getRandom = maxValue => Math.floor(Math.random() * maxValue);
 
 const listener = new keypress.Listener();
 
@@ -94,16 +92,16 @@ requestAnimationFrame(animate);
 
 const panelWidth = 400;
 
-const arraySet = (array, index, element) =>{
+const arraySet = (array, index, element) => {
   const newArray = [...array];
   newArray[index] = element;
   return newArray;
-}
+};
 const objectSet = (obj, key, value) => {
-  const newObj = {...obj};
+  const newObj = { ...obj };
   newObj[key] = value;
   return newObj;
-}
+};
 
 class TrafficFlow extends React.Component {
   constructor (props) {
@@ -235,10 +233,10 @@ class TrafficFlow extends React.Component {
         if (res && res.status === 200) {
           // this.traffic.clientUpdateTime = Date.now();
           res.body.connections[0].metrics = {
-            normal:parseFloat(getRandom(1000)),
-            danger:parseFloat(getRandom(10))
-          }
-          console.log(res.body)
+            normal: parseFloat(getRandom(1000)),
+            danger: parseFloat(getRandom(10))
+          };
+          console.log(res.body);
           // this.setState({
           //   trafficData: res.body
           // })
@@ -249,7 +247,7 @@ class TrafficFlow extends React.Component {
 
   updateRandomData = (newEdgeData) => {
     // const newEdegData = this.genConnectionData();
-    this.refreshEdgeConnection(newEdgeData)
+    this.refreshEdgeConnection(newEdgeData);
   };
 
   componentDidMount () {
@@ -264,10 +262,10 @@ class TrafficFlow extends React.Component {
         const newEdgeData = this.genConnectionData();
         this.updateRandomData(newEdgeData);
       }, 3000);
-    }; 
+    }
     this.setState({
       autoTimer: timer
-    })
+    });
   }
 
   genConnectionData = (node, metrics) => {
@@ -277,15 +275,15 @@ class TrafficFlow extends React.Component {
       normal: parseFloat(getRandom(5000)),
       warning: parseFloat(getRandom(100)),
       danger: parseFloat(getRandom(50))
-    }
+    };
     return {
-      source: "INTERNET",
+      source: 'INTERNET',
       target: edge,
       updated: Date.now(),
       notices: [],
       metrics: newMetrics,
       class: 'normal'
-    }
+    };
   };
 
   componentWillUnmount () {
@@ -293,7 +291,7 @@ class TrafficFlow extends React.Component {
   }
 
   shouldComponentUpdate (nextProps, nextState) {
-    console.log('nextState:', nextState)
+    console.log('nextState:', nextState);
     if (!this.state.currentView
         || this.state.currentView[0] !== nextState.currentView[0]
         || this.state.currentView[1] !== nextState.currentView[1]
@@ -315,14 +313,14 @@ class TrafficFlow extends React.Component {
         window.history.pushState(state, state.title, state.url);
       }
     }
-    console.log('#### re-render')
+    console.log('#### re-render');
     return true;
   }
 
   updateTrafficData (newTraffic) {
     const regionUpdateStatus = _.map(_.filter(newTraffic.nodes, n => n.name !== 'INTERNET'), node => ({ region: node.name, updated: node.updated }));
     const lastUpdatedTime = _.max(_.map(regionUpdateStatus, 'updated'));
-    console.log('newTraffic in updateTrafficData:', newTraffic)
+    console.log('newTraffic in updateTrafficData:', newTraffic);
     this.setState({
       regionUpdateStatus: regionUpdateStatus,
       timeOffset: newTraffic.clientUpdateTime - newTraffic.serverUpdateTime,
@@ -442,7 +440,7 @@ class TrafficFlow extends React.Component {
   refreshEdgeConnection = (connectionData) => {
     const oldConnectionData = this.state.trafficData.connections;
     const index = oldConnectionData.findIndex(data => data.target === connectionData.target);
-    const newConnectionData = arraySet(oldConnectionData, index ,connectionData);
+    const newConnectionData = arraySet(oldConnectionData, index, connectionData);
     console.log('new connection data =', connectionData, newConnectionData);
     const newTrafficData = {
       // ...this.state.trafficData,
@@ -450,7 +448,7 @@ class TrafficFlow extends React.Component {
       maxVolume: this.state.maxVolume,
       clientUpdateTime: Date.now(),
       connections: newConnectionData
-    }
+    };
     this.updateTrafficData(newTrafficData);
   };
 
@@ -460,60 +458,58 @@ class TrafficFlow extends React.Component {
     this.setState({
       ...this.state,
       [type]: event.target.value
-    }) 
+    });
   }
 
   onChangeCheckBox = (event) => {
     const autoChecked = event.target.checked;
     let timer = null;
-    if(autoChecked){
+    if (autoChecked) {
       timer = setInterval(() => {
         const newEdgeData = this.genConnectionData();
         this.updateRandomData(newEdgeData);
-      },3000)
+      }, 3000);
     } else {
       clearInterval(this.state.autoTimer);
     }
     this.setState({
       autoChecked,
       autoTimer: timer
-    })
+    });
   }
 
   onChangeSelect = (event) => {
     console.log(event.target.value);
     this.setState({
       currentEdge: event.target.value
-    })
+    });
   }
 
   onChangeEdgeData = (event) => {
-    const {currentEdge, trafficData} = this.state;
+    const { currentEdge, trafficData } = this.state;
     const metricType = event.target.id;
     const metricValue = parseFloat(event.target.value);
     console.log(metricType, metricValue, currentEdge, trafficData.connections);
     const selectedEdgeConnection = trafficData.connections.find(connection => connection.target === currentEdge);
     const newMetrics = objectSet(selectedEdgeConnection.metrics, metricType, metricValue);
-    console.log(newMetrics)
+    console.log(newMetrics);
     const newConnectionData = this.genConnectionData(currentEdge, newMetrics);
     this.refreshEdgeConnection(newConnectionData);
   }
 
   setZero = () => {
-    const connections = TARGETS.map(target => {
-      return this.genConnectionData(target, {
-        normal: 0,
-        warning: 0,
-        danger: 0
-      })
-    })
+    const connections = TARGETS.map(target => this.genConnectionData(target, {
+      normal: 0,
+      warning: 0,
+      danger: 0
+    }));
     const newTrafficData = {
       // ...this.state.trafficData,
       ...VIZ_DEF_CONFIG,
       maxVolume: this.state.maxVolume,
       clientUpdateTime: Date.now(),
       connections
-    }
+    };
     this.updateTrafficData(newTrafficData);
   };
 
@@ -526,7 +522,7 @@ class TrafficFlow extends React.Component {
     const showBreadcrumbs = trafficData && trafficData.nodes && trafficData.nodes.length > 0;
     const breadcrumbsRoot = _.get(trafficData, 'name', 'root');
     const selectedEdgeConnection = trafficData.connections.find(connection => connection.target === currentEdge);
-    const {normal, danger, warning} = selectedEdgeConnection ? selectedEdgeConnection.metrics: {};
+    const { normal, danger, warning } = selectedEdgeConnection ? selectedEdgeConnection.metrics : {};
 
     let matches;
     if (this.state.currentGraph) {
@@ -613,12 +609,12 @@ class TrafficFlow extends React.Component {
             ))}
           </select>
           <EdgeDataList>
-              <label>normal</label>
-              <input id="normal" value={normal} onChange={this.onChangeEdgeData}></input>
-              <label>warning</label>
-              <input id="warning" value={warning} onChange={this.onChangeEdgeData}></input>
-              <label>danger</label>
-              <input id="danger" value={danger} onChange={this.onChangeEdgeData}></input>
+            <label>normal</label>
+            <input id="normal" value={normal} onChange={this.onChangeEdgeData}></input>
+            <label>warning</label>
+            <input id="warning" value={warning} onChange={this.onChangeEdgeData}></input>
+            <label>danger</label>
+            <input id="danger" value={danger} onChange={this.onChangeEdgeData}></input>
           </EdgeDataList>
         </Box>
       </div>

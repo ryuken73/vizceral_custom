@@ -1,4 +1,4 @@
-# Vizceral Example with dynamic traffic data
+# Vizceral Example with live traffic data
   This is a clone of [Vizceral Example](https://github.com/netflix/vizceral-example) with which you can vary traffic data and verify resulting vizualization.
 
 # Setup
